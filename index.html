@@ -353,8 +353,7 @@
     <p>Pick your category. Make your choice. No wrong answers... probably.</p>
   </div>
 
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5810396447542948"
-     crossorigin="anonymous"></script>
+  <div class="ad-slot">Advertisement</div>
 
   <!-- Category pills -->
   <div class="cat-pills" id="catPills"></div>
@@ -392,8 +391,7 @@
 
   </div>
 
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5810396447542948"
-     crossorigin="anonymous"></script>
+  <div class="ad-slot" style="margin-top:8px">Advertisement</div>
   <div class="footer">AI-powered questions • New every time</div>
 </div>
 
@@ -534,7 +532,7 @@ Format: ${fmt}
 Percentages must be realistic (not always equal). Each option: 5-12 words. No offensive content.`,
       messages: [{
         role:'user',
-        content:`Generate 5 unique "Would You Rather?" questions with EXACTLY ${count} options each, for ${cat.prompt}. Varied tone. JSON only.`
+        content:`Generate 3 unique "Would You Rather?" questions with EXACTLY ${count} options each, for ${cat.prompt}. Varied tone. JSON only.`
       }]
     })
   });
@@ -571,15 +569,6 @@ function vote(idx) {
   const chosenPct = pcts[idx] || Math.round(100 / optionCount);
   document.getElementById('counterText').textContent =
     `${chosenPct}% of people also chose option ${LETTERS[idx]}`;
-
-  prefetch(currentCat, optionCount);
-}
-
-async function prefetch(cat, count) {
-  const key = cacheKey(cat, count);
-  if ((cache[key]||[]).length < 2) {
-    try { await fetchQuestion(cat, count); } catch(e){}
-  }
 }
 
 function nextQuestion() {
@@ -612,10 +601,6 @@ function showToast(msg) {
 // Init
 buildPills();
 loadQuestion();
-
-setTimeout(() => {
-  [CATEGORIES[1], CATEGORIES[2]].forEach(cat => prefetch(cat, optionCount));
-}, 3000);
 </script>
 </body>
 </html>
