@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Would You Rather?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0efe8;
+    --muted: #888884;
+    --accent: #ff4d4d;
+    --accent2: #ff8c42;
+    --accent3: #a78bfa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(255,77,77,0.08) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 32px 20px 100px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+    animation: fadeDown 0.5s ease both;
+  }
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 88px);
+    letter-spacing: 3px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header p { font-size: 14px; color: var(--muted); font-weight: 300; letter-spacing: 0.5px; }
+
+  /* ── Ad slot ── */
+  .ad-slot {
+    background: var(--surface);
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 24px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Category pills (wrapping) ── */
+  .cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); border-color: rgba(255,255,255,0.15); background: var(--surface2); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab-icon { font-size: 15px; }
+
+  /* ── Card area ── */
+  .card-area { animation: fadeUp 0.5s ease 0.2s both; }
+
+  .question-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .question-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .q-counter { font-size: 12px; color: var(--muted); text-align: right; margin-bottom: 10px; }
+
+  /* Grids */
+  .choices-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 520px) { .choices-2 { grid-template-columns: 1fr; } }
+
+  .choices-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 640px) { .choices-3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 400px) { .choices-3 { grid-template-columns: 1fr; } }
+
+  .choices-wrap { position: relative; }
+
+  /* Choice card */
+  .choice {
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-align: center;
+    overflow: hidden;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .choice::before {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    border-radius: 14px;
+    pointer-events: none;
+  }
+  .choice[data-idx="0"]::before { background: linear-gradient(135deg,rgba(255,77,77,.13),rgba(255,77,77,.03)); }
+  .choice[data-idx="1"]::before { background: linear-gradient(135deg,rgba(255,140,66,.13),rgba(255,140,66,.03)); }
+  .choice[data-idx="2"]::before { background: linear-gradient(135deg,rgba(167,139,250,.13),rgba(167,139,250,.03)); }
+
+  .choice:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.2); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+  .choice[data-idx="0"]:hover { border-color: rgba(255,77,77,.5); }
+  .choice[data-idx="1"]:hover { border-color: rgba(255,140,66,.5); }
+  .choice[data-idx="2"]:hover { border-color: rgba(167,139,250,.5); }
+  .choice:hover::before { opacity: 1; }
+
+  .choice.picked { transform: none; pointer-events: none; }
+  .choice.picked[data-idx="0"] { border-color: var(--accent) !important; background: rgba(255,77,77,.12) !important; }
+  .choice.picked[data-idx="1"] { border-color: var(--accent2) !important; background: rgba(255,140,66,.12) !important; }
+  .choice.picked[data-idx="2"] { border-color: var(--accent3) !important; background: rgba(167,139,250,.12) !important; }
+  .choice.dimmed { opacity: 0.38; transform: none; pointer-events: none; }
+
+  .choice-letter {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px; letter-spacing: 2px; color: var(--muted);
+  }
+  .choice-text {
+    font-size: 16px; font-weight: 500; line-height: 1.45; color: var(--text); position: relative; z-index: 1;
+  }
+  .choices-3 .choice-text { font-size: 14px; }
+
+  .choice-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; opacity: 0;
+    transition: opacity 0.3s ease 0.1s;
+  }
+  .choice[data-idx="0"] .choice-pct { color: var(--accent); }
+  .choice[data-idx="1"] .choice-pct { color: var(--accent2); }
+  .choice[data-idx="2"] .choice-pct { color: var(--accent3); }
+  .choice.picked .choice-pct,
+  .choices-wrap.revealed .choice .choice-pct { opacity: 1; }
+
+  .vote-bar-wrap {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+    width: 100%; opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .choices-wrap.revealed .vote-bar-wrap { opacity: 1; }
+  .vote-bar-fill { height: 100%; border-radius: 2px; transition: width 0.7s ease; width: 0%; }
+  .choice[data-idx="0"] .vote-bar-fill { background: var(--accent); }
+  .choice[data-idx="1"] .vote-bar-fill { background: var(--accent2); }
+  .choice[data-idx="2"] .vote-bar-fill { background: var(--accent3); }
+
+  .or-badge {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px; letter-spacing: 1px; color: var(--muted);
+    z-index: 10; pointer-events: none;
+  }
+  @media (max-width: 520px) { .or-badge { display: none; } }
+
+  /* ── Controls row ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+
+  .btn-next {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent);
+    border: none; border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; color: #fff;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-next:hover { background: #ff3333; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,77,77,.35); }
+  .btn-next:hover svg { transform: translateX(3px); }
+  .btn-next:active { transform: none; }
+  .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-next svg { transition: transform 0.2s ease; }
+
+  .share-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .share-btn:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
+
+  .counter { font-size: 12px; color: var(--muted); letter-spacing: 0.4px; }
+
+  /* ── Bottom mode pill bar ── */
+  .mode-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 28px;
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .mode-bar-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .mode-pill-group {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .mode-pill {
+    padding: 7px 20px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    letter-spacing: 0.3px;
+  }
+  .mode-pill:hover { color: var(--text); }
+  .mode-pill.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  /* misc */
+  .card-area.loading .choices-wrap { opacity: 0.3; pointer-events: none; }
+  .question-card { animation: popIn 0.35s ease both; }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 12px; color: var(--muted); opacity: 0.5;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 10px 20px; border-radius: 100px;
+    font-size: 13px; color: var(--text);
+    transition: transform 0.3s ease; z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:none} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(16px)}  to{opacity:1;transform:none} }
+  @keyframes popIn    { from{opacity:0;transform:scale(0.94)}       to{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>WOULD YOU <span>RATHER</span>?</h1>
+    <p>Pick your category. Make your choice. No wrong answers... probably.</p>
+  </div>
+
+  <div class="ad-slot">Advertisement</div>
+
+  <!-- Category pills -->
+  <div class="cat-pills" id="catPills"></div>
+
+  <!-- Mode toggle -->
+  <div class="mode-bar" style="margin-bottom:24px;margin-top:0;padding-top:0;border-top:none;">
+    <span class="mode-bar-label">Options per question:</span>
+    <div class="mode-pill-group">
+      <button class="mode-pill active" id="mode2" onclick="setMode(2)">2 choices</button>
+      <button class="mode-pill"        id="mode3" onclick="setMode(3)">3 choices</button>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="card-area" id="cardArea">
+    <div class="question-label" id="categoryLabel">Dating Couples</div>
+    <div class="q-counter" id="qCounter">Question 1</div>
+    <div id="questionCard" class="question-card">
+      <div class="choices-wrap" id="choicesWrap"></div>
+    </div>
+
+    <div class="controls">
+      <span class="counter" id="counterText">Tap a choice to vote</span>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="share-btn" onclick="shareQuestion()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Share
+        </button>
+        <button class="btn-next" id="btnNext" onclick="nextQuestion()">
+          Next question
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ad-slot" style="margin-top:8px">Advertisement</div>
+  <div class="footer">AI-powered questions • New every time</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = [
+  { id:'dating',  label:'Dating Couples',    icon:'💑', desc:'Flirty & revealing',         prompt:'romantic dating couples who are early in a relationship, keeping things fun, flirty, and revealing about personality and compatibility' },
+  { id:'married', label:'Married Couples',   icon:'💍', desc:'Life, love & compromise',     prompt:'married couples, focused on real life decisions, lifestyle choices, parenting, finances, and long-term compatibility' },
+  { id:'family',  label:'Family Night',      icon:'👨‍👩‍👧', desc:'All ages, game night ready', prompt:'whole families including kids and parents, fun and wholesome, suitable for all ages, great for game night' },
+  { id:'kids',    label:'Kids',              icon:'🧸', desc:'Silly & imaginative',         prompt:'children ages 6-12, silly, imaginative, and totally age-appropriate with fun scenarios involving animals, superpowers, and food' },
+  { id:'friends', label:'Friends',           icon:'🤝', desc:'Funny & personality-revealing',prompt:'friend groups, funny and slightly edgy, revealing about personality, perfect for parties or hanging out' },
+  { id:'office',  label:'Work & Office',     icon:'💼', desc:'Professional but fun',        prompt:'coworkers and office culture, professional but funny, about work-life balance, job perks, and workplace scenarios' },
+  { id:'teens',   label:'Teens',             icon:'🎮', desc:'School, social & pop culture', prompt:'teenagers ages 13-17, relatable to teen life, school, social media, pop culture, and growing up, age-appropriate' },
+  { id:'deep',    label:'Deep & Thoughtful', icon:'🌊', desc:'Life, values & meaning',      prompt:'philosophical adults, deep life questions about values, meaning, sacrifice, legacy, and existential choices' },
+];
+
+const LETTERS = ['A','B','C'];
+
+let currentCat  = CATEGORIES[0];
+let optionCount = 2;
+let cache       = {};
+let currentQ    = null;
+let qIndex      = 1;
+let voted       = false;
+let isLoading   = false;
+
+
+/* ── Build category pills ── */
+function buildPills() {
+  const wrap = document.getElementById('catPills');
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (cat.id === currentCat.id ? ' active' : '');
+    btn.dataset.id = cat.id;
+    btn.innerHTML = `<span class="tab-icon">${cat.icon}</span>${cat.label}`;
+    btn.onclick = () => selectCategory(cat);
+    wrap.appendChild(btn);
+  });
+}
+
+function selectCategory(cat) {
+  currentCat = cat;
+  qIndex = 1;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.id === cat.id));
+  document.getElementById('categoryLabel').textContent = cat.label;
+  loadQuestion();
+}
+
+/* ── Mode toggle ── */
+function setMode(n) {
+  if (n === optionCount) return;
+  optionCount = n;
+  document.getElementById('mode2').classList.toggle('active', n === 2);
+  document.getElementById('mode3').classList.toggle('active', n === 3);
+  cache[currentCat.id + '_' + n] = [];
+  loadQuestion();
+}
+
+function cacheKey(cat, n) { return cat.id + '_' + n; }
+
+/* ── Render choices ── */
+function renderChoices(q, placeholder) {
+  const wrap      = document.getElementById('choicesWrap');
+  const gridClass = optionCount === 3 ? 'choices-3' : 'choices-2';
+  const opts      = optionCount === 3 ? [q.a, q.b, q.c]          : [q.a, q.b];
+  const pcts      = optionCount === 3 ? [q.pctA, q.pctB, q.pctC] : [q.pctA, q.pctB];
+
+  let html = `<div class="${gridClass}" id="choicesGrid">`;
+  opts.forEach((text, i) => {
+    const style = placeholder ? 'opacity:0.35;pointer-events:none' : '';
+    html += `
+      <div class="choice" data-idx="${i}" onclick="vote(${i})" style="${style}">
+        <div class="choice-letter">Option ${LETTERS[i]}</div>
+        <div class="choice-text">${text || '...'}</div>
+        <div class="choice-pct">${pcts[i] ? pcts[i]+'%' : ''}</div>
+        <div class="vote-bar-wrap"><div class="vote-bar-fill"></div></div>
+      </div>`;
+  });
+  html += '</div>';
+  if (optionCount === 2 && !placeholder) html += '<div class="or-badge">OR</div>';
+  wrap.innerHTML = html;
+}
+
+/* ── Load question ── */
+async function loadQuestion() {
+  if (isLoading) return;
+  isLoading = true;
+  voted = false;
+
+  document.getElementById('counterText').textContent = 'Tap a choice to vote';
+  document.getElementById('qCounter').textContent    = `Question ${qIndex}`;
+  document.getElementById('btnNext').disabled        = true;
+
+  const ph = optionCount === 3
+    ? {a:'...',b:'...',c:'...',pctA:0,pctB:0,pctC:0}
+    : {a:'...',b:'...',pctA:0,pctB:0};
+  renderChoices(ph, true);
+
+  try {
+    const q = await fetchQuestion(currentCat, optionCount);
+    currentQ = q;
+    renderChoices(q, false);
+    const card = document.getElementById('questionCard');
+    card.style.animation = 'none';
+    void card.offsetWidth;
+    card.style.animation = 'popIn 0.35s ease both';
+  } catch(e) {
+    const fb2 = {a:'Always plan every date night',b:'Always pick every restaurant',pctA:58,pctB:42};
+    const fb3 = {a:'Always cook every meal',b:'Always clean the whole house',c:'Always do all the laundry',pctA:38,pctB:35,pctC:27};
+    currentQ = optionCount === 3 ? fb3 : fb2;
+    renderChoices(currentQ, false);
+  }
+
+  document.getElementById('btnNext').disabled = false;
+  isLoading = false;
+}
+
+/* ── Fetch from Claude API ── */
+async function fetchQuestion(cat, count) {
+  const key = cacheKey(cat, count);
+  if (!cache[key]) cache[key] = [];
+  if (cache[key].length > 0) return cache[key].shift();
+
+  const fmt = count === 3
+    ? `{"questions":[{"a":"...","b":"...","c":"...","pctA":N,"pctB":N,"pctC":N}]} — pctA+pctB+pctC=100`
+    : `{"questions":[{"a":"...","b":"...","pctA":N,"pctB":N}]} — pctA+pctB=100`;
+
+  const resp = await fetch('/.netlify/functions/claude', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      system: `You generate "Would You Rather?" questions. Respond ONLY with valid JSON, no markdown.
+Format: ${fmt}
+Percentages must be realistic (not always equal). Each option: 5-12 words. No offensive content.`,
+      messages: [{
+        role:'user',
+        content:`Generate 5 unique "Would You Rather?" questions with EXACTLY ${count} options each, for ${cat.prompt}. Varied tone. JSON only.`
+      }]
+    })
+  });
+
+  const data   = await resp.json();
+  const raw    = data.content[0].text.replace(/```json|```/g,'').trim();
+  const parsed = JSON.parse(raw);
+  cache[key]   = parsed.questions.slice(1);
+  return parsed.questions[0];
+}
+
+/* ── Vote ── */
+function vote(idx) {
+  if (voted) return;
+  voted = true;
+
+  const wrap = document.getElementById('choicesWrap');
+  const pcts = optionCount === 3
+    ? [currentQ.pctA, currentQ.pctB, currentQ.pctC]
+    : [currentQ.pctA, currentQ.pctB];
+
+  wrap.classList.add('revealed');
+
+  wrap.querySelectorAll('.choice').forEach((el, i) => {
+    el.classList.add(i === idx ? 'picked' : 'dimmed');
+    const bar = el.querySelector('.vote-bar-fill');
+    const pct = pcts[i] || Math.round(100 / optionCount);
+    setTimeout(() => { if (bar) bar.style.width = pct + '%'; }, 60);
+  });
+
+  const chosenPct = pcts[idx] || Math.round(100 / optionCount);
+  document.getElementById('counterText').textContent =
+    `${chosenPct}% of people also chose option ${LETTERS[idx]}`;
+
+  prefetch(currentCat, optionCount);
+}
+
+async function prefetch(cat, count) {
+  const key = cacheKey(cat, count);
+  if ((cache[key]||[]).length < 2) {
+    try { await fetchQuestion(cat, count); } catch(e){}
+  }
+}
+
+function nextQuestion() {
+  if (isLoading) return;
+  qIndex++;
+  loadQuestion();
+}
+
+function shareQuestion() {
+  const text = currentQ
+    ? optionCount === 3
+      ? `Would you rather...\n\nA) ${currentQ.a}\nB) ${currentQ.b}\nC) ${currentQ.c}\n\nPlay at: ${location.href}`
+      : `Would you rather...\n\nA) ${currentQ.a}\n\nOR\n\nB) ${currentQ.b}\n\nPlay at: ${location.href}`
+    : `Play Would You Rather at: ${location.href}`;
+
+  if (navigator.share) {
+    navigator.share({title:'Would You Rather?', text});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Init
+buildPills();
+loadQuestion();
+
+setTimeout(() => {
+  [CATEGORIES[1], CATEGORIES[2]].forEach(cat => prefetch(cat, optionCount));
+}, 3000);
+</script>
+</body>
+</html>
